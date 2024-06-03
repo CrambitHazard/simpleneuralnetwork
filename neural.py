@@ -59,7 +59,54 @@ def one_hot(Y):
     # return np.eye(10)[Y]
     one_hot_Y=np.zeros((Y.size,Y.max()+1))
     one_hot_Y[np.arange(Y.size),Y]=1
+    one_hot_Y=one_hot_Y.T # because we want each column to be an example, we will transpose it
+    return one_hot_Y
 
-# def back_prop(Z1,A1,Z2,A2,W2,Y):
+def derivative_ReLU(Z):
+    # derivative of ReLU function
+    return Z>0
+
+def back_prop(Z1,A1,Z2,A2,W2,X,Y):
+    # moves backwards in the neural network to find better weights and biases
+    m=Y.size
+    one_hot_Y=one_hot(Y)
+    dZ2=A2-one_hot_Y
+    dW2=1/m * dZ2.dot(A1.T)
+    db2=1/m * np.sum(dZ2,1)
+    dZ1=W2.T.dot(dZ2)*derivative_ReLU(Z1)
+    dW1=1/m * dZ1.dot(X.T)
+    db1=1/m * np.sum(dZ1,1)
+    return dW1,db1,dW2,db2
+
+def update_params(W1,b1,W2,b2,dW1,db1,dW2,db2,alpha):
+    # updates the weights and biases, where alpha is a predefined learning rate
+    W1 -= alpha * dW1
+    b1 -= alpha * np.reshape(db1,(10,1))
+    W2 -= alpha * dW2
+    b2 -= alpha * np.reshape(db2,(10,1))
+    return W1,b1,W2,b2
+
+def get_predictions(A2):
+    # returns the predictions of the neural network
+    return np.argmax(A2,0)
+
+def get_accuracy(predictions,Y):
+    # returns the accuracy of the neural network
+    print(predictions,Y)
+    return np.sum(predictions==Y)/Y.size
+
+def gradient_descent(X,Y,iterations,alpha):
+    W1,b1,W2,b2=init_params() # initializing the parameters
+    for i in range(iterations):
+        # runs the loop for given iterations, moving forward and backward, updating the params every time
+        Z1,A1,Z2,A2=forward_prop(W1,b1,W2,b2,X)
+        dW1,db1,dW2,db2=back_prop(Z1,A1,Z2,A2,W2,X,Y)
+        W1,b1,W2,b2=update_params(W1,b1,W2,b2,dW1,db1,dW2,db2,alpha)
+        if i%50==0:
+            print(f"Iteration: {i} / {iterations}")
+            print("Accuracy: ",get_accuracy(get_predictions(A2),Y))
+    return W1,b1,W2,b2
+
+W1,b1,W2,b2=gradient_descent(X_train,Y_train,iterations=1000,alpha=0.1)
 
 
